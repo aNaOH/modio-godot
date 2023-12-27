@@ -1,0 +1,65 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build macOS",
+            "type": "shell",
+            "command": "cargo build --release --target=x86_64-apple-darwin",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Windows x64",
+            "type": "shell",
+            "command": "cargo build --release --target=x86_64-pc-windows-msvc",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Windows x86",
+            "type": "shell",
+            "command": "cargo build --release --target=i686-pc-windows-msvc",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Linux x64",
+            "type": "shell",
+            "command": "cargo build --release --target=x86_64-unknown-linux-gnu",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Linux x86",
+            "type": "shell",
+            "command": "cargo build --release --target=i686-unknown-linux-gnu",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build macOS (Debug)",
+            "type": "shell",
+            "command": "cargo build --target=x86_64-apple-darwin",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Windows x64 (Debug)",
+            "type": "shell",
+            "command": "cargo build --target=x86_64-pc-windows-msvc",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Windows x86 (Debug)",
+            "type": "shell",
+            "command": "cargo build --target=i686-pc-windows-msvc",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Linux x64 (Debug)",
+            "type": "shell",
+            "command": "cargo build --target=x86_64-unknown-linux-gnu",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Linux x86 (Debug)",
+            "type": "shell",
+            "command": "cargo build --target=i686-unknown-linux-gnu",
+            "problemMatcher": []
+        }
+    ]
+}
