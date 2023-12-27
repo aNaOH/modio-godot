@@ -14,7 +14,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         rust: [stable, nightly]
         arch: [x64, x86]
-        mode: [debug, release]
 
     steps:
     - name: Checkout code
@@ -27,10 +26,19 @@ jobs:
         toolchain: ${{ matrix.rust }}
 
     - name: Build
-      run: cargo build --target ${{ matrix.arch }}-unknown-${{ matrix.os }} --${{ matrix.mode }}
+      run: cargo build --target ${{ matrix.arch }}-unknown-${{ matrix.os }} --release
+
+    - name: Build Debug
+      run: cargo build --target ${{ matrix.arch }}-unknown-${{ matrix.os }}
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}
-        path: target/${{ matrix.arch }}-unknown-${{ matrix.os }}/${{ matrix.mode }}/mod_io
+        name: ${{ matrix.os }}-${{ matrix.arch }}-release
+        path: target/${{ matrix.arch }}-unknown-${{ matrix.os }}/release/mod_io
+
+    - name: Upload Artifact Debug
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-${{ matrix.arch }}-debug
+        path: target/${{ matrix.arch }}-unknown-${{ matrix.os }}/debug/mod_io
