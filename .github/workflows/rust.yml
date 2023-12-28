@@ -1,13 +1,13 @@
-name: Rust
+name: Rust Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
-  build-windows-release:
+  build-windows-release-x64:
     runs-on: windows-latest
     steps:
     - name: Checkout code
@@ -19,16 +19,19 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    - name: Build Windows Release
+    - name: Build Windows Release x64
       run: cargo build --target x86_64-pc-windows-msvc --release
 
+    - name: List files
+      run: dir /s /b
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: windows-release
+        name: windows-release-x64
         path: target/x86_64-pc-windows-msvc/release/mod_io.dll
 
-  build-windows-debug:
+  build-windows-release-x86:
     runs-on: windows-latest
     steps:
     - name: Checkout code
@@ -40,16 +43,67 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    - name: Build Windows Debug
+    - name: Build Windows Release x86
+      run: cargo build --target i686-pc-windows-msvc --release
+
+    - name: List files
+      run: dir /s /b
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-release-x86
+        path: target/i686-pc-windows-msvc/release/mod_io.dll
+
+  build-windows-debug-x64:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Windows Debug x64
       run: cargo build --target x86_64-pc-windows-msvc
 
+    - name: List files
+      run: dir /s /b
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: windows-debug
+        name: windows-debug-x64
         path: target/x86_64-pc-windows-msvc/debug/mod_io.dll
 
-  build-macos-release:
+  build-windows-debug-x86:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Windows Debug x86
+      run: cargo build --target i686-pc-windows-msvc
+
+    - name: List files
+      run: dir /s /b
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-debug-x86
+        path: target/i686-pc-windows-msvc/debug/mod_io.dll
+
+  build-macos-release-x64:
     runs-on: macos-latest
     steps:
     - name: Checkout code
@@ -61,16 +115,19 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    - name: Build macOS Release
+    - name: Build macOS Release x64
       run: cargo build --target x86_64-apple-darwin --release
 
+    - name: List files
+      run: ls -R
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macos-release
-        path: target/x86_64-apple-darwin/release/mod_io.dylib
+        name: macos-release-x64
+        path: target/x86_64-apple-darwin/release/libmod_io.dylib
 
-  build-macos-debug:
+  build-macos-release-x86:
     runs-on: macos-latest
     steps:
     - name: Checkout code
@@ -82,53 +139,14 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    - name: Build macOS Debug
-      run: cargo build --target x86_64-apple-darwin
+    - name: Build macOS Release x86
+      run: cargo build --target i686-apple-darwin --release
+
+    - name: List files
+      run: ls -R
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macos-debug
-        path: target/x86_64-apple-darwin/debug/mod_io.dylib
-
-  build-linux-release:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Build Linux Release
-      run: cargo build --target x86_64-unknown-linux-gnu --release
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-release
-        path: target/x86_64-unknown-linux-gnu/release/mod_io.so
-
-  build-linux-debug:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Build Linux Debug
-      run: cargo build --target x86_64-unknown-linux-gnu
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-debug
-        path: target/x86_64-unknown-linux-gnu/debug/mod_io.so
+        name: macos-release-x86
+        path: target/i686-app
