@@ -22,9 +22,6 @@ jobs:
     - name: Build Windows Release x64
       run: cargo build --target x86_64-pc-windows-msvc --release
 
-    - name: List files
-      run: dir /s /b
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
@@ -45,9 +42,6 @@ jobs:
 
     - name: Build Windows Release x86
       run: cargo build --target i686-pc-windows-msvc --release
-
-    - name: List files
-      run: dir /s /b
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
@@ -70,9 +64,6 @@ jobs:
     - name: Build Windows Debug x64
       run: cargo build --target x86_64-pc-windows-msvc
 
-    - name: List files
-      run: dir /s /b
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
@@ -93,9 +84,6 @@ jobs:
 
     - name: Build Windows Debug x86
       run: cargo build --target i686-pc-windows-msvc
-
-    - name: List files
-      run: dir /s /b
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
@@ -118,9 +106,6 @@ jobs:
     - name: Build macOS Release x64
       run: cargo build --target x86_64-apple-darwin --release
 
-    - name: List files
-      run: ls -R
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
@@ -139,14 +124,129 @@ jobs:
         profile: minimal
         toolchain: stable
 
+    - name: Install macOS x86 target
+      run: rustup target add i686-apple-darwin
+
     - name: Build macOS Release x86
       run: cargo build --target i686-apple-darwin --release
-
-    - name: List files
-      run: ls -R
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: macos-release-x86
-        path: target/i686-app
+        path: target/i686-apple-darwin/release/libmod_io.dylib
+
+
+  build-macos-debug-x86:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Install macOS x86 target
+      run: rustup target add i686-apple-darwin
+
+    - name: Build macOS Release x86
+      run: cargo build --target i686-apple-darwin
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-release-x86
+        path: target/i686-apple-darwin/release/libmod_io.dylib
+
+  build-linux-release-x64:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Linux Release
+      run: cargo build --target x86_64-unknown-linux-gnu --release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-release
+        path: target/x86_64-unknown-linux-gnu/release/libmod_io.so
+  
+  build-linux-debug-x64:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Linux Debug
+      run: cargo build --target x86_64-unknown-linux-gnu
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-debug
+        path: target/x86_64-unknown-linux-gnu/debug/libmod_io.so
+
+  build-linux-release-x86:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Install Linux x86 target
+      run: rustup target add i686-unknown-linux-gnu
+
+    - name: Build Linux Release
+      run: cargo build --target i686-unknown-linux-gnu --release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-release
+        path: target/i686-unknown-linux-gnu/release/libmod_io.so
+
+  build-linux-debug-x86:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Install Linux x86 target
+      run: rustup target add i686-unknown-linux-gnu
+
+    - name: Build Linux Debug
+      run: cargo build --target i686-unknown-linux-gnu
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-debug
+        path: target/i686-unknown-linux-gnu/debug/libmod_io.so
