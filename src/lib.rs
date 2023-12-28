@@ -1,9 +1,8 @@
+use godot::builtin::meta::GodotConvert;
 use godot::prelude::*;
 use godot::engine::Node;
-use godot::engine::NodeVirtual;
-
-
-use godot::prelude::meta::VariantMetadata;
+use modio::mods::filters::Tags;
+use modio::types::id::GameId;
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
 use modio::mods::Mod;
@@ -15,11 +14,11 @@ unsafe impl ExtensionLibrary for ModIOAddon {}
 
 struct ModIOClient {
     client: Modio,
-    id: u32
+    id: u64
 }
 
 impl ModIOClient {
-    fn new(api: &String, game: u32) -> Option<Self> {
+    fn new(api: &String, game: u64) -> Option<Self> {
         match Modio::new(Credentials::new(api)) {
             Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
             Err(_) => None,
@@ -34,7 +33,7 @@ struct ModIO {
 }
 
 #[godot_api]
-impl NodeVirtual for ModIO {
+impl INode for ModIO {
     fn init(_node: Base<Node>) -> Self {
         godot_print!("Hello, world!");
 
@@ -43,12 +42,12 @@ impl NodeVirtual for ModIO {
 }
 
 struct ModIOMod {
-    pub id: u32,
+    pub id: u64,
     pub date_updated: i64,
     pub date_live: i64,
-    pub profile_url: GodotString,
-    pub modfile_url: GodotString,
-    pub modfile_name: GodotString,
+    pub profile_url: GString,
+    pub modfile_url: GString,
+    pub modfile_name: GString,
     pub modfile_size: i64,
     pub tags: PackedStringArray,
 }
@@ -72,7 +71,7 @@ impl ModIOMod {
             .collect();
 
         Self {
-            id: mod_info.id,
+            id: mod_info.id.get(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
             profile_url: mod_info.profile_url.as_str().into(),
@@ -86,8 +85,14 @@ impl ModIOMod {
     
 }
 
-impl ToVariant for ModIOMod {
-    fn to_variant(&self) -> Variant {
+impl GodotConvert for ModIOMod {
+    type Via = Dictionary;
+}
+
+impl ToGodot for ModIOMod {
+
+
+    fn into_godot(self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
         dictionary.insert("date_updated", self.date_updated);
@@ -99,21 +104,43 @@ impl ToVariant for ModIOMod {
         dictionary.insert("tags", self.tags.clone());
 
 
+        dictionary
+    }
+
+    fn to_variant(&self) -> Variant {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
         Variant::from(dictionary)
     }
-}
+
+    fn to_godot(&self) -> Self::Via {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
 
 
-impl VariantMetadata for ModIOMod {
-    fn variant_type() -> VariantType {
-        VariantType::Dictionary
+        dictionary
     }
 }
 
 #[godot_api]
 impl ModIO {
     #[func]
-    fn connect(&mut self, api_key: GodotString, game: u32) -> bool {
+    fn connect(&mut self, api_key: GString, game: u64) -> bool {
         if self.client.is_none() {
             if let Some(client) = ModIOClient::new(&api_key.to_string(), game) {
                 self.client = Some(client);
@@ -126,18 +153,18 @@ impl ModIO {
         self.client.is_some()
     }
 
-    async fn get_mods_async_inner(&self, query: GodotString) -> Option<Array<ModIOMod>> {
+    async fn get_mods_async_inner(&self, query: GString, tags: GString) -> Option<Array<Dictionary>> {
         if let Some(ref client) = self.client {
             // Example: Get mods (replace with your actual parameters)
             let mut f = Filter::default();
 
             if query != "".into() {
-                f = Fulltext::eq(query);
+                f = Fulltext::eq(query).and(Tags::_in(tags));
             }
 
             match client
                 .client
-                .game(client.id)
+                .game(GameId::new(client.id))
                 .mods()
                 .search(f)
                 .collect()
@@ -147,7 +174,7 @@ impl ModIO {
                     let mut mod_vec = Array::new();
                     for m in mods {
 
-                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m))
+                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m).to_godot())
                     }
 
                     Some(mod_vec)
@@ -165,10 +192,11 @@ impl ModIO {
     
     // Función #[func] que invoca la función asíncrona intermedia
     #[func]
-    fn get_mods(&self, query: GodotString) -> Array<ModIOMod> {
+    fn get_mods(&self, query: GString) -> Array<Dictionary> {
+
         // Crear una nueva tarea y ejecutarla
         let result = async {
-            match self.get_mods_async_inner(query).await {
+            match self.get_mods_async_inner(query, "".into()).await {
                 Some(mods) => {
                     // Imprimir información sobre los mods
                     godot_print!("Mods found");
