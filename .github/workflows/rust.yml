@@ -7,14 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        rust: [stable, nightly]
-        arch: [x64, x86]
-
+  build-windows-release:
+    runs-on: windows-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -23,22 +17,118 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.rust }}
+        toolchain: stable
 
-    - name: Build
-      run: cargo build --target ${{ matrix.arch }}-unknown-${{ matrix.os }} --release
-
-    - name: Build Debug
-      run: cargo build --target ${{ matrix.arch }}-unknown-${{ matrix.os }}
+    - name: Build Windows Release
+      run: cargo build --target x86_64-pc-windows-msvc --release
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.arch }}-release
-        path: target/${{ matrix.arch }}-unknown-${{ matrix.os }}/release/mod_io
+        name: windows-release
+        path: target/x86_64-pc-windows-msvc/release/mod_io.dll
 
-    - name: Upload Artifact Debug
+  build-windows-debug:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Windows Debug
+      run: cargo build --target x86_64-pc-windows-msvc
+
+    - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.arch }}-debug
-        path: target/${{ matrix.arch }}-unknown-${{ matrix.os }}/debug/mod_io
+        name: windows-debug
+        path: target/x86_64-pc-windows-msvc/debug/mod_io.dll
+
+  build-macos-release:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build macOS Release
+      run: cargo build --target x86_64-apple-darwin --release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-release
+        path: target/x86_64-apple-darwin/release/mod_io.dylib
+
+  build-macos-debug:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build macOS Debug
+      run: cargo build --target x86_64-apple-darwin
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-debug
+        path: target/x86_64-apple-darwin/debug/mod_io.dylib
+
+  build-linux-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Linux Release
+      run: cargo build --target x86_64-unknown-linux-gnu --release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-release
+        path: target/x86_64-unknown-linux-gnu/release/mod_io.so
+
+  build-linux-debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+
+    - name: Build Linux Debug
+      run: cargo build --target x86_64-unknown-linux-gnu
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-debug
+        path: target/x86_64-unknown-linux-gnu/debug/mod_io.so
