@@ -1,6 +1,7 @@
 use godot::builtin::meta::GodotConvert;
 use godot::prelude::*;
 use godot::engine::Node;
+use modio::mods::filters::Tags;
 use modio::types::id::GameId;
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
@@ -152,13 +153,13 @@ impl ModIO {
         self.client.is_some()
     }
 
-    async fn get_mods_async_inner(&self, query: GString) -> Option<Array<Dictionary>> {
+    async fn get_mods_async_inner(&self, query: GString, tags: String) -> Option<Array<Dictionary>> {
         if let Some(ref client) = self.client {
             // Example: Get mods (replace with your actual parameters)
             let mut f = Filter::default();
 
             if query != "".into() {
-                f = Fulltext::eq(query);
+                f = Fulltext::eq(query).and(Tags::_in(tags));
             }
 
             match client
@@ -191,10 +192,26 @@ impl ModIO {
     
     // Función #[func] que invoca la función asíncrona intermedia
     #[func]
-    fn get_mods(&self, query: GString) -> Array<Dictionary> {
+    fn get_mods(&self, query: GString, tags: PackedStringArray) -> Array<Dictionary> {
+
+        // Convertir a Vec<String>
+        let mut tag_vec: Vec<String> = Vec::new();
+
+        for i in 0..tags.len() {
+            let tag = tags.get(i);
+            tag_vec.push(tag.to_string());
+
+            if i != tags.len() - 1 {
+                tag_vec.push(",".to_string());
+            }
+        }
+
+        // Unir los elementos con comas
+        let tag_string: String = tag_vec.concat();
+
         // Crear una nueva tarea y ejecutarla
         let result = async {
-            match self.get_mods_async_inner(query).await {
+            match self.get_mods_async_inner(query, tag_string).await {
                 Some(mods) => {
                     // Imprimir información sobre los mods
                     godot_print!("Mods found");
