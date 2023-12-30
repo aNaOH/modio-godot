@@ -225,6 +225,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "gensym"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "913dce4c5f06c2ea40fc178c06f777ac89fc6b1383e90c254fafb1abe4ba3c82"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "uuid",
+]
+
+[[package]]
+name = "getrandom"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe9006bed769170c11f845cf00c7c1e9092aeb3f268e007c3e760ac68008070f"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "wasi",
+]
+
+[[package]]
 name = "gimli"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -239,7 +262,7 @@ checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
 [[package]]
 name = "godot"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
  "godot-core",
  "godot-macros",
@@ -248,7 +271,7 @@ dependencies = [
 [[package]]
 name = "godot-bindings"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
  "godot4-prebuilt",
 ]
@@ -256,7 +279,7 @@ dependencies = [
 [[package]]
 name = "godot-codegen"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
  "godot-bindings",
  "godot-fmt",
@@ -270,7 +293,7 @@ dependencies = [
 [[package]]
 name = "godot-core"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
  "glam",
  "godot-bindings",
@@ -281,8 +304,9 @@ dependencies = [
 [[package]]
 name = "godot-ffi"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
+ "gensym",
  "godot-bindings",
  "godot-codegen",
  "paste",
@@ -291,7 +315,7 @@ dependencies = [
 [[package]]
 name = "godot-fmt"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
  "proc-macro2",
 ]
@@ -299,8 +323,9 @@ dependencies = [
 [[package]]
 name = "godot-macros"
 version = "0.1.0"
-source = "git+https://github.com/godot-rust/gdext?branch=master#a92164bb3a98108b95506f80769408583421e6dc"
+source = "git+https://github.com/godot-rust/gdext?branch=master#5e18af87a13bf8d40b4f50bfcb180228e227b773"
 dependencies = [
+ "godot-bindings",
  "proc-macro2",
  "quote",
  "venial",
@@ -309,7 +334,7 @@ dependencies = [
 [[package]]
 name = "godot4-prebuilt"
 version = "0.0.0"
-source = "git+https://github.com/godot-rust/godot4-prebuilt?branch=4.1.1#fca6897dbfb1a2d9387f81491acd77f6f091b8c4"
+source = "git+https://github.com//godot-rust/godot4-prebuilt?branch=4.1.2#ad2a7a4495070528ddaa4970aa6ef64c6433e48b"
 
 [[package]]
 name = "h2"
@@ -538,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "mod_io"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "godot",
  "modio",
@@ -547,12 +572,11 @@ dependencies = [
 
 [[package]]
 name = "modio"
-version = "0.8.3"
-source = "git+https://github.com/nickelc/modio-rs?branch=master#feecb8553df66ab6445c7def9c8732cee62443e9"
+version = "0.9.1"
+source = "git+https://github.com/nickelc/modio-rs?branch=master#042cc4e19025b5992f9f15c6b49346f4525a920d"
 dependencies = [
  "bitflags 2.4.0",
  "bytes",
- "futures-core",
  "futures-util",
  "http",
  "mime",
@@ -1166,6 +1190,15 @@ dependencies = [
  "idna",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "uuid"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e395fcf16a7a3d8127ec99782007af141946b4795001f876d54fb0d55978560"
+dependencies = [
+ "getrandom",
 ]
 
 [[package]]
