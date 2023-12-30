@@ -35,8 +35,6 @@ struct ModIO {
 #[godot_api]
 impl INode for ModIO {
     fn init(_node: Base<Node>) -> Self {
-        godot_print!("Hello, world!");
-
         Self { client: None }
     }
 }
