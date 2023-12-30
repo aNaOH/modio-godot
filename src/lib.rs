@@ -41,12 +41,14 @@ impl INode for ModIO {
 
 struct ModIOMod {
     pub id: u64,
+    pub name: GString,
     pub date_updated: i64,
     pub date_live: i64,
     pub profile_url: GString,
     pub modfile_url: GString,
     pub modfile_name: GString,
     pub modfile_size: i64,
+    pub submitted_by_username: GString,
     pub tags: PackedStringArray,
 }
 
@@ -70,12 +72,14 @@ impl ModIOMod {
 
         Self {
             id: mod_info.id.get(),
+            name: mod_info.name.as_str().into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
             profile_url: mod_info.profile_url.as_str().into(),
             modfile_url: modfile_url.into(),
             modfile_name: modfile_name.into(),
             modfile_size: modfile_size as i64,
+            submitted_by_username: mod_info.submitted_by.username.as_str().into(),
             tags,
         }
     }
@@ -93,12 +97,14 @@ impl ToGodot for ModIOMod {
     fn into_godot(self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
         dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("submitted_by_username", self.submitted_by_username.clone());
         dictionary.insert("tags", self.tags.clone());
 
 
@@ -108,12 +114,14 @@ impl ToGodot for ModIOMod {
     fn to_variant(&self) -> Variant {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
         dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("submitted_by_username", self.submitted_by_username.clone());
         dictionary.insert("tags", self.tags.clone());
 
         Variant::from(dictionary)
@@ -122,12 +130,14 @@ impl ToGodot for ModIOMod {
     fn to_godot(&self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
         dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("submitted_by_username", self.submitted_by_username.clone());
         dictionary.insert("tags", self.tags.clone());
 
 
