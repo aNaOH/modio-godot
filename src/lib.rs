@@ -161,10 +161,10 @@ impl ModIO {
         self.client.is_some()
     }
 
-    async fn get_mods_async_inner(&self, query: GString, tags: GString) -> Option<Array<Dictionary>> {
+    async fn get_mods_async_inner(&self, query: GString, tags: GString, per_page: usize, page: usize) -> Option<Array<Dictionary>> {
         if let Some(ref client) = self.client {
             // Example: Get mods (replace with your actual parameters)
-            let mut f = Filter::default();
+            let mut f = Filter::default().and(with_limit(per_page).offset(per_page*page));
 
             if query != "".into() {
                 f = Fulltext::eq(query).and(Tags::_in(tags));
@@ -200,11 +200,11 @@ impl ModIO {
     
     // Función #[func] que invoca la función asíncrona intermedia
     #[func]
-    fn get_mods(&self, query: GString) -> Array<Dictionary> {
+    fn get_mods(&self, query: GString, page: u16, per_page: u16) -> Array<Dictionary> {
 
         // Crear una nueva tarea y ejecutarla
         let result = async {
-            match self.get_mods_async_inner(query, "".into()).await {
+            match self.get_mods_async_inner(query, "".into(), per_page.into(), page.into()).await {
                 Some(mods) => {
                     // Imprimir información sobre los mods
                     godot_print!("Mods found");

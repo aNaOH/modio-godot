@@ -13,13 +13,12 @@ Currently supports:
 **TODO**
 
  - Upload mods
- - Paging
 
 ## How to use
 
     var modio = ModIO.new()
 	modio.connect(api_key, game_id)
-	var mods = modio.get_mods(query)
+	var mods = modio.get_mods(query, page, per_page)
 get_mods() returns an array of dictioraries, the dictionary is formed by:
 
  - id
