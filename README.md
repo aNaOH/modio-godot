@@ -1,15 +1,17 @@
 ![Mod.io For Godot](https://github.com/aNaOH/modio-godot/blob/main/logo.svg?raw=true)
 
+The main branch contains the lastest working version of the plugin, the master branch contains the lastest version of the code, even if it not works or if I'm stuck with something.
+
 Adds mod.io integration for Godot using GDExtension.
+
 Currently supports:
 
  - Windows
+ - OSX
+ - Linux
 
 **TODO**
 
- - Support for OSX
- - Support for Linux
- - Support for Android
  - Upload mods
  - Paging
 
@@ -18,9 +20,11 @@ Currently supports:
     var modio = ModIO.new()
 	modio.connect(api_key, game_id)
 	var mods = modio.get_mods(query)
-get_mods() returns an array of dictioraries, the dictionary is:
+get_mods() returns an array of dictioraries, the dictionary is formed by:
 
  - id
+ - name (Thanks to @d10sfan for adding it!)
+ - submitter (Thanks to @d10sfan for adding it!)
  - date_updated
  - date_live
  - profile_url

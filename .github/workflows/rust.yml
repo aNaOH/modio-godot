@@ -243,6 +243,9 @@ jobs:
       with:
         ndk-version: 'r23c'
 
+    - name: Install target
+      run: rustup target add aarch64-linux-android
+
     - name: Build Android Debug x64
       run: cargo build --target aarch64-linux-android
 
@@ -268,6 +271,9 @@ jobs:
       uses: nttld/setup-ndk@v1
       with:
         ndk-version: 'r23c'
+
+    - name: Install target
+      run: rustup target add i686-linux-android
 
     - name: Build Android Debug x86
       run: cargo build --target i686-linux-android

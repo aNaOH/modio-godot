@@ -35,14 +35,14 @@ struct ModIO {
 #[godot_api]
 impl INode for ModIO {
     fn init(_node: Base<Node>) -> Self {
-        godot_print!("Hello, world!");
-
         Self { client: None }
     }
 }
 
 struct ModIOMod {
     pub id: u64,
+    pub name: GString,
+    pub submitter: GString,
     pub date_updated: i64,
     pub date_live: i64,
     pub profile_url: GString,
@@ -72,6 +72,8 @@ impl ModIOMod {
 
         Self {
             id: mod_info.id.get(),
+            name: mod_info.name.as_str().into(),
+            submitter: mod_info.submitted_by.username.as_str().into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
             profile_url: mod_info.profile_url.as_str().into(),
@@ -95,6 +97,8 @@ impl ToGodot for ModIOMod {
     fn into_godot(self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
@@ -110,6 +114,8 @@ impl ToGodot for ModIOMod {
     fn to_variant(&self) -> Variant {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
@@ -124,6 +130,8 @@ impl ToGodot for ModIOMod {
     fn to_godot(&self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("profile_url", self.profile_url.clone());
