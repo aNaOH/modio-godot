@@ -1,6 +1,7 @@
-use godot::builtin::meta::GodotConvert;
 use godot::prelude::*;
 use godot::engine::Node;
+use godot::builtin::meta::GodotConvert;
+
 use modio::mods::filters::Tags;
 use modio::types::id::GameId;
 use modio::{Credentials, Modio};
@@ -12,36 +13,7 @@ struct ModIOAddon;
 #[gdextension]
 unsafe impl ExtensionLibrary for ModIOAddon {}
 
-struct ModIOClient {
-    client: Modio,
-    id: u64
-}
-
-impl ModIOClient {
-    fn new(api: &String, game: u64) -> Option<Self> {
-        match Modio::new(Credentials::new(api)) {
-            Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
-            Err(_) => None,
-        }
-    }
-}
-
-#[derive(GodotClass)]
-#[class(base = Node)]
-struct ModIO {
-    client: Option<ModIOClient>,
-}
-
-#[godot_api]
-impl INode for ModIO {
-    fn init(_node: Base<Node>) -> Self {
-        Self { client: None }
-    }
-}
-
-#[derive(GodotClass)]
-#[class(tool, init, base=Resource)]
-struct ModIOMod {
+pub struct ModIOMod {
     pub id: u64,
     pub name: GString,
     pub submitter: GString,
@@ -52,6 +24,58 @@ struct ModIOMod {
     pub modfile_name: GString,
     pub modfile_size: i64,
     pub tags: PackedStringArray,
+}
+
+impl GodotConvert for ModIOMod {
+    type Via = Dictionary;
+}
+
+impl ToGodot for ModIOMod {
+
+
+    fn into_godot(self) -> Self::Via {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+
+        dictionary
+    }
+
+    fn to_variant(&self) -> Variant {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+        Variant::from(dictionary)
+    }
+
+    fn to_godot(&self) -> Self::Via {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+
+        dictionary
+    }
 }
 
 impl ModIOMod {
@@ -85,8 +109,33 @@ impl ModIOMod {
             tags,
         }
     }
+}
 
-    
+struct ModIOClient {
+    client: Modio,
+    id: u64
+}
+
+impl ModIOClient {
+    fn new(api: &String, game: u64) -> Option<Self> {
+        match Modio::new(Credentials::new(api)) {
+            Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
+            Err(_) => None,
+        }
+    }
+}
+
+#[derive(GodotClass)]
+#[class(base = Node)]
+struct ModIO {
+    client: Option<ModIOClient>,
+}
+
+#[godot_api]
+impl INode for ModIO {
+    fn init(_node: Base<Node>) -> Self {
+        Self { client: None }
+    }
 }
 
 #[godot_api]
@@ -126,7 +175,7 @@ impl ModIO {
                     let mut mod_vec = Array::new();
                     for m in mods {
 
-                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m))
+                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m).to_godot())
                     }
 
                     Some(mod_vec)
@@ -141,6 +190,7 @@ impl ModIO {
             None
         }
     }
+
     
     // Función #[func] que invoca la función asíncrona intermedia
     #[func]
