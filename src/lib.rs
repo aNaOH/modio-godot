@@ -39,6 +39,8 @@ impl INode for ModIO {
     }
 }
 
+#[derive(GodotClass)]
+#[class(tool, init, base=Resource)]
 struct ModIOMod {
     pub id: u64,
     pub name: GString,
@@ -87,64 +89,6 @@ impl ModIOMod {
     
 }
 
-impl GodotConvert for ModIOMod {
-    type Via = Dictionary;
-}
-
-impl ToGodot for ModIOMod {
-
-
-    fn into_godot(self) -> Self::Via {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("name", self.name.clone());
-        dictionary.insert("submitter", self.submitter.clone());
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
-
-
-        dictionary
-    }
-
-    fn to_variant(&self) -> Variant {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("name", self.name.clone());
-        dictionary.insert("submitter", self.submitter.clone());
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
-
-        Variant::from(dictionary)
-    }
-
-    fn to_godot(&self) -> Self::Via {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("name", self.name.clone());
-        dictionary.insert("submitter", self.submitter.clone());
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
-
-
-        dictionary
-    }
-}
-
 #[godot_api]
 impl ModIO {
     #[func]
@@ -182,7 +126,7 @@ impl ModIO {
                     let mut mod_vec = Array::new();
                     for m in mods {
 
-                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m).to_godot())
+                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m))
                     }
 
                     Some(mod_vec)

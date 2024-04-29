@@ -340,7 +340,7 @@ dependencies = [
 [[package]]
 name = "godot4-prebuilt"
 version = "0.0.0"
-source = "git+https://github.com//godot-rust/godot4-prebuilt?branch=4.1.2#ad2a7a4495070528ddaa4970aa6ef64c6433e48b"
+source = "git+https://github.com//godot-rust/godot4-prebuilt?branch=4.2.1#bc1e77856d181c14c59d2a5cb6a7e138ea5a2b39"
 
 [[package]]
 name = "h2"
@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "mod_io"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "godot",
  "modio",

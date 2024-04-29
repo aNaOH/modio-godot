@@ -1,3 +1,4 @@
+
 ![Mod.io For Godot](https://github.com/aNaOH/modio-godot/blob/main/logo.svg?raw=true)
 
 The main branch contains the lastest working version of the plugin, the master branch contains the lastest version of the code, even if it not works or if I'm stuck with something.
@@ -19,17 +20,18 @@ Currently supports:
     var modio = ModIO.new()
 	modio.connect(api_key, game_id)
 	var mods = modio.get_mods(query, page, per_page)
+
 get_mods() returns an array of dictioraries, the dictionary is formed by:
 
- - id
- - name (Thanks to @d10sfan for adding it!)
- - submitter (Thanks to @d10sfan for adding it!)
- - date_updated
- - date_live
- - profile_url
- - modfile_url
- - modfile_name
- - modfile_size
- - tags
+- id
+- name (Thanks to @d10sfan for adding it!)
+- submitter (Thanks to @d10sfan for adding it!)
+- date_updated
+- date_live
+- profile_url
+- modfile_url
+- modfile_name
+- modfile_size
+- tags
 
 get_mods() needs an string argument for the search query, if you want to list all mods just use "" as the argument
