@@ -15,7 +15,9 @@ public:
 	ModIO();
 	~ModIO();
 
-	bool init(String key, unsigned int game);
+	void init(String key, unsigned int game);
+
+	void has_init(bool ok);
 
 	void _process(double delta) override;
 };
