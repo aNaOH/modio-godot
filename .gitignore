@@ -2,3 +2,4 @@
 /.vscode
 SConstruct
 .sconsign.dblite
+/src/*.obj
