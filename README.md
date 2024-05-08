@@ -5,33 +5,6 @@ The main branch contains the lastest working version of the plugin, the master b
 
 Adds mod.io integration for Godot using GDExtension.
 
-Currently supports:
-
- - Windows
- - OSX
- - Linux
-
 **TODO**
 
- - Upload mods
-
-## How to use
-
-    var modio = ModIO.new()
-	modio.connect(api_key, game_id)
-	var mods = modio.get_mods(query, page, per_page)
-
-get_mods() returns an array of dictioraries, the dictionary is formed by:
-
-- id
-- name (Thanks to @d10sfan for adding it!)
-- submitter (Thanks to @d10sfan for adding it!)
-- date_updated
-- date_live
-- profile_url
-- modfile_url
-- modfile_name
-- modfile_size
-- tags
-
-get_mods() needs a string argument for the search query, if you want to list all mods just use "" as the argument
+ - Make it work
