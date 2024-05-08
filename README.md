@@ -31,4 +31,4 @@ get_mods() returns an array of dictioraries, the dictionary is formed by:
  - modfile_size
  - tags
 
-get_mods() needs an string argument for the search query, if you want to list all mods just use "" as the argument
+get_mods() needs a string argument for the search query, if you want to list all mods just use "" as the argument
