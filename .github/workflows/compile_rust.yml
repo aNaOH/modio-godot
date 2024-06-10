@@ -103,6 +103,9 @@ jobs:
         profile: minimal
         toolchain: stable
 
+    - name: Install toolchain
+      run: rustup target add x86_64-apple-darwin
+
     - name: Build macOS Release x64
       run: cargo build --target x86_64-apple-darwin --release
 
@@ -174,112 +177,3 @@ jobs:
       with:
         name: linux-debug
         path: target/x86_64-unknown-linux-gnu/debug/libmod_io.so
-  build-android-release-x64:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Install Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: 'r23c'
-
-    - name: Build Android Release x64
-      run: cargo build --target aarch64-linux-android --release
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-release-x64
-        path: target/aarch64-linux-android/release/libmod_io.so
-
-  build-android-release-x86:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Install Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: 'r23c'
-
-    - name: Build Android Release x86
-      run: cargo build --target i686-linux-android --release
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-release-x86
-        path: target/i686-linux-android/release/libmod_io.so
-
-  build-android-debug-x64:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Install Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: 'r23c'
-
-    - name: Install target
-      run: rustup target add aarch64-linux-android
-
-    - name: Build Android Debug x64
-      run: cargo build --target aarch64-linux-android
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-debug-x64
-        path: target/aarch64-linux-android/debug/libmod_io.so
-
-  build-android-debug-x86:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Install Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: 'r23c'
-
-    - name: Install target
-      run: rustup target add i686-linux-android
-
-    - name: Build Android Debug x86
-      run: cargo build --target i686-linux-android
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-debug-x86
-        path: target/i686-linux-android/debug/libmod_io.so
