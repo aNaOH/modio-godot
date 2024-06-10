@@ -10,7 +10,7 @@ use modio::mods::Mod;
 use modio::mods::AddModOptions;
 
 use std::fs::File;
-use std::io::{Write, BufWriter};
+use std::io::{BufWriter};
 use std::path::Path;
 use zip::write::FileOptions;
 use zip::ZipWriter;
@@ -174,7 +174,7 @@ impl ModIOClient {
         let zip_path = format!("{}.zip", modfile_path);
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
-        let modfile = fs::read(zip_path).await?;
+        //let modfile = fs::read(zip_path).await?;
 
         let response = self.client
             .game(GameId::new(self.id))
