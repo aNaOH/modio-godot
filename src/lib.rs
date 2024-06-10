@@ -19,6 +19,7 @@ pub struct ModIOMod {
     pub submitter: GString,
     pub date_updated: i64,
     pub date_live: i64,
+    pub thumb_url: GString,
     pub profile_url: GString,
     pub modfile_url: GString,
     pub modfile_name: GString,
@@ -36,8 +37,11 @@ impl ToGodot for ModIOMod {
     fn into_godot(self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
@@ -51,8 +55,11 @@ impl ToGodot for ModIOMod {
     fn to_variant(&self) -> Variant {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
@@ -65,8 +72,11 @@ impl ToGodot for ModIOMod {
     fn to_godot(&self) -> Self::Via {
         let mut dictionary = Dictionary::new();
         dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
         dictionary.insert("profile_url", self.profile_url.clone());
         dictionary.insert("modfile_url", self.modfile_url.clone());
         dictionary.insert("modfile_name", self.modfile_name.clone());
@@ -102,6 +112,7 @@ impl ModIOMod {
             submitter: mod_info.submitted_by.username.as_str().into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
+            thumb_url: mod_info.logo.thumb_1280x720.as_str().into_godot(),
             profile_url: mod_info.profile_url.as_str().into(),
             modfile_url: modfile_url.into(),
             modfile_name: modfile_name.into(),
