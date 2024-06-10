@@ -127,6 +127,9 @@ jobs:
         profile: minimal
         toolchain: stable
 
+    - name: Install toolchain
+      run: rustup target add x86_64-apple-darwin
+
     - name: Build macOS Release x64
       run: cargo build --target x86_64-apple-darwin
 
