@@ -2,9 +2,9 @@ name: Compile mod.io for Godot
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-windows-release-x64:
