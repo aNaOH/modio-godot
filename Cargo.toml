@@ -1,6 +1,6 @@
 [package]
 name = "mod_io"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,9 +9,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [patch."https://github.com/godot-rust/godot4-prebuilt"]
-godot4-prebuilt = { git = "https://github.com//godot-rust/godot4-prebuilt", branch = "4.1.2"}
+godot4-prebuilt = { git = "https://github.com//godot-rust/godot4-prebuilt", branch = "4.2.1"}
 
 [dependencies]
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
+godot = { git = "https://github.com/godot-rust/gdext", rev="5e18af87a13bf8d40b4f50bfcb180228e227b773" }
 modio = { git = "https://github.com/nickelc/modio-rs", branch = "master" }
 tokio = { version = "1.32.0", features = ["full"] }
+zip = "0.5"

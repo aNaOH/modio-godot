@@ -1,55 +1,99 @@
-use godot::builtin::meta::GodotConvert;
 use godot::prelude::*;
 use godot::engine::Node;
+use godot::builtin::meta::GodotConvert;
+
 use modio::mods::filters::Tags;
 use modio::types::id::GameId;
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
 use modio::mods::Mod;
+use modio::mods::AddModOptions;
+
+use std::fs::File;
+use std::io::{Write, BufWriter};
+use std::path::Path;
+use zip::write::FileOptions;
+use zip::ZipWriter;
+use tokio::fs;
 
 struct ModIOAddon;
 
 #[gdextension]
 unsafe impl ExtensionLibrary for ModIOAddon {}
 
-struct ModIOClient {
-    client: Modio,
-    id: u64
-}
-
-impl ModIOClient {
-    fn new(api: &String, game: u64) -> Option<Self> {
-        match Modio::new(Credentials::new(api)) {
-            Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
-            Err(_) => None,
-        }
-    }
-}
-
-#[derive(GodotClass)]
-#[class(base = Node)]
-struct ModIO {
-    client: Option<ModIOClient>,
-}
-
-#[godot_api]
-impl INode for ModIO {
-    fn init(_node: Base<Node>) -> Self {
-        godot_print!("Hello, world!");
-
-        Self { client: None }
-    }
-}
-
-struct ModIOMod {
+pub struct ModIOMod {
     pub id: u64,
+    pub name: GString,
+    pub submitter: GString,
     pub date_updated: i64,
     pub date_live: i64,
+    pub thumb_url: GString,
     pub profile_url: GString,
     pub modfile_url: GString,
     pub modfile_name: GString,
     pub modfile_size: i64,
     pub tags: PackedStringArray,
+}
+
+impl GodotConvert for ModIOMod {
+    type Via = Dictionary;
+}
+
+impl ToGodot for ModIOMod {
+
+
+    fn into_godot(self) -> Self::Via {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+
+        dictionary
+    }
+
+    fn to_variant(&self) -> Variant {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+        Variant::from(dictionary)
+    }
+
+    fn to_godot(&self) -> Self::Via {
+        let mut dictionary = Dictionary::new();
+        dictionary.insert("id", self.id);
+        dictionary.insert("name", self.name.clone());
+        dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("date_updated", self.date_updated);
+        dictionary.insert("date_live", self.date_live);
+        dictionary.insert("thumb_url", self.thumb_url.clone());
+        dictionary.insert("profile_url", self.profile_url.clone());
+        dictionary.insert("modfile_url", self.modfile_url.clone());
+        dictionary.insert("modfile_name", self.modfile_name.clone());
+        dictionary.insert("modfile_size", self.modfile_size.clone());
+        dictionary.insert("tags", self.tags.clone());
+
+
+        dictionary
+    }
 }
 
 impl ModIOMod {
@@ -72,8 +116,11 @@ impl ModIOMod {
 
         Self {
             id: mod_info.id.get(),
+            name: mod_info.name.as_str().into(),
+            submitter: mod_info.submitted_by.username.as_str().into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
+            thumb_url: mod_info.logo.thumb_1280x720.as_str().into_godot(),
             profile_url: mod_info.profile_url.as_str().into(),
             modfile_url: modfile_url.into(),
             modfile_name: modfile_name.into(),
@@ -81,59 +128,75 @@ impl ModIOMod {
             tags,
         }
     }
-
-    
 }
 
-impl GodotConvert for ModIOMod {
-    type Via = Dictionary;
+struct ModIOClient {
+    client: Modio,
+    id: u64
 }
 
-impl ToGodot for ModIOMod {
-
-
-    fn into_godot(self) -> Self::Via {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
-
-
-        dictionary
+impl ModIOClient {
+    fn new(api: &String, game: u64) -> Option<Self> {
+        match Modio::new(Credentials::new(api)) {
+            Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
+            Err(_) => None,
+        }
     }
 
-    fn to_variant(&self) -> Variant {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
+    async fn compress_to_zip(file_path: &str, zip_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let path = Path::new(file_path);
+        let zip_file = File::create(zip_path)?;
+        let mut zip = ZipWriter::new(BufWriter::new(zip_file));
 
-        Variant::from(dictionary)
+        if path.is_dir() {
+            for entry in std::fs::read_dir(path)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_file() {
+                    let name = path.file_name().unwrap().to_string_lossy().into_owned();
+                    let mut f = File::open(&path)?;
+                    zip.start_file(name, FileOptions::default())?;
+                    std::io::copy(&mut f, &mut zip)?;
+                }
+            }
+        } else if path.is_file() {
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            let mut f = File::open(&path)?;
+            zip.start_file(name, FileOptions::default())?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+
+        zip.finish()?;
+        Ok(())
     }
 
-    fn to_godot(&self) -> Self::Via {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("id", self.id);
-        dictionary.insert("date_updated", self.date_updated);
-        dictionary.insert("date_live", self.date_live);
-        dictionary.insert("profile_url", self.profile_url.clone());
-        dictionary.insert("modfile_url", self.modfile_url.clone());
-        dictionary.insert("modfile_name", self.modfile_name.clone());
-        dictionary.insert("modfile_size", self.modfile_size.clone());
-        dictionary.insert("tags", self.tags.clone());
+    async fn upload_mod(&self, modfile_path: &str, name: &str, summary: &str, logo: &str) -> Result<ModIOMod, Box<dyn std::error::Error>> {
+        let zip_path = format!("{}.zip", modfile_path);
+        Self::compress_to_zip(modfile_path, &zip_path).await?;
 
+        let modfile = fs::read(zip_path).await?;
 
-        dictionary
+        let response = self.client
+            .game(GameId::new(self.id))
+            .mods()
+            .add(AddModOptions::new(name, logo, summary))
+            .await?;
+
+        let mod_info = ModIOMod::from_mod(&response);
+        Ok(mod_info)
+    }
+}
+
+#[derive(GodotClass)]
+#[class(base = Node)]
+struct ModIO {
+    client: Option<ModIOClient>,
+}
+
+#[godot_api]
+impl INode for ModIO {
+    fn init(_node: Base<Node>) -> Self {
+        Self { client: None }
     }
 }
 
@@ -153,10 +216,10 @@ impl ModIO {
         self.client.is_some()
     }
 
-    async fn get_mods_async_inner(&self, query: GString, tags: GString) -> Option<Array<Dictionary>> {
+    async fn get_mods_async_inner(&self, query: GString, tags: GString, per_page: usize, page: usize) -> Option<Array<Dictionary>> {
         if let Some(ref client) = self.client {
             // Example: Get mods (replace with your actual parameters)
-            let mut f = Filter::default();
+            let mut f = Filter::default().and(with_limit(per_page).offset(per_page*page));
 
             if query != "".into() {
                 f = Fulltext::eq(query).and(Tags::_in(tags));
@@ -189,14 +252,15 @@ impl ModIO {
             None
         }
     }
+
     
     // Función #[func] que invoca la función asíncrona intermedia
     #[func]
-    fn get_mods(&self, query: GString) -> Array<Dictionary> {
+    fn get_mods(&self, query: GString, page: u16, per_page: u16) -> Array<Dictionary> {
 
         // Crear una nueva tarea y ejecutarla
         let result = async {
-            match self.get_mods_async_inner(query, "".into()).await {
+            match self.get_mods_async_inner(query, "".into(), per_page.into(), page.into()).await {
                 Some(mods) => {
                     // Imprimir información sobre los mods
                     godot_print!("Mods found");
@@ -220,5 +284,37 @@ impl ModIO {
     
         // Devolver el resultado de la tarea
         mods
+    }
+
+    #[func]
+    fn upload_mod(&self, modfile_path: GString, name: GString, summary: GString, logo_path: GString) -> Dictionary {
+        let empty_dict = Dictionary::new();
+        if let Some(ref client) = self.client {
+            // Crear una nueva tarea y ejecutarla
+            let result = async {
+                match client.upload_mod(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &logo_path.to_string()).await {
+                    Ok(mod_info) => {
+                        // Imprimir información sobre el mod subido
+                        godot_print!("Mod uploaded successfully: {}", mod_info.name);
+                        // Devolver el mod subido
+                        mod_info.to_godot()
+                    }
+                    Err(err) => {
+                        // Imprimir mensaje de error y devolver un diccionario vacío
+                        godot_print!("Error uploading mod: {:?}", err);
+                        empty_dict
+                    }
+                }
+            };
+
+            // Crear una nueva runtime de tokio y ejecutar la tarea
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(result)
+        } else {
+            empty_dict
+        }
     }
 }
