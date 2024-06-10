@@ -136,7 +136,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macos-release-x64
+        name: macos-debug-x64
         path: target/x86_64-apple-darwin/debug/libmod_io.dylib
 
   build-linux-release-x64:
