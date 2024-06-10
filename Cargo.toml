@@ -16,3 +16,5 @@ godot = { git = "https://github.com/godot-rust/gdext", rev="5e18af87a13bf8d40b4f
 modio = { git = "https://github.com/nickelc/modio-rs", branch = "master" }
 tokio = { version = "1.32.0", features = ["full"] }
 zip = "0.5"
+reqwest = { version = "0.11", features = ["json"] }
+image = "0.23"

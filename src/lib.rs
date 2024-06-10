@@ -7,14 +7,20 @@ use modio::types::id::GameId;
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
 use modio::mods::Mod;
-use modio::mods::AddModOptions;
 
 use std::fs::File;
-use std::io::{BufWriter};
+use std::io::BufWriter;
 use std::path::Path;
+
 use zip::write::FileOptions;
 use zip::ZipWriter;
-use tokio::fs;
+
+use reqwest::Client;
+use reqwest::multipart;
+
+use tokio::fs::read;
+
+use image::GenericImageView;
 
 struct ModIOAddon;
 
@@ -170,16 +176,39 @@ impl ModIOClient {
         Ok(())
     }
 
-    async fn upload_mod(&self, modfile_path: &str, name: &str, summary: &str, logo: &str) -> Result<ModIOMod, Box<dyn std::error::Error>> {
+    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: Option<&str>) -> Result<ModIOMod, Box<dyn std::error::Error>> {
         let zip_path = format!("{}.zip", modfile_path);
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
-        //let modfile = fs::read(zip_path).await?;
+        let modfile = read(&zip_path).await?;
+        let client = Client::new();
 
-        let response = self.client
-            .game(GameId::new(self.id))
-            .mods()
-            .add(AddModOptions::new(name, logo, summary))
+        let mut form = multipart::Form::new()
+            .text("name", name.to_string())
+            .text("summary", summary.to_string())
+            .part("modfile", multipart::Part::bytes(modfile).file_name("mod.zip"));
+
+        if let Some(thumb_path) = thumbnail_path {
+            let thumbnail = read(thumb_path).await?;
+            let img = image::open(thumb_path)?;
+
+            if img.width() * 9 != img.height() * 16 || img.width() < 512 || img.height() < 288 {
+                return Err("Thumbnail must be 16:9 and at least 512x288".into());
+            }
+
+            if thumbnail.len() > 8 * 1024 * 1024 {
+                return Err("Thumbnail must be less than 8MB".into());
+            }
+
+            form = form.part("logo", multipart::Part::bytes(thumbnail).file_name("thumbnail.png"));
+        }
+
+        let response = client.post(format!("https://api.mod.io/v1/games/{}/mods", self.id))
+            .header("Authorization", format!("Bearer {}", api_key))
+            .multipart(form)
+            .send()
+            .await?
+            .json::<Mod>()
             .await?;
 
         let mod_info = ModIOMod::from_mod(&response);
@@ -287,27 +316,33 @@ impl ModIO {
     }
 
     #[func]
-    fn upload_mod(&self, modfile_path: GString, name: GString, summary: GString, logo_path: GString) -> Dictionary {
+    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: Dictionary) -> Dictionary {
         let empty_dict = Dictionary::new();
         if let Some(ref client) = self.client {
-            // Crear una nueva tarea y ejecutarla
+            // Create a new task and execute it
             let result = async {
-                match client.upload_mod(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &logo_path.to_string()).await {
+                // Extract the thumbnail path from the dictionary
+                let thumb_path: Option<String> = thumbnail_path
+                    .get("path")
+                    .and_then(|v| v.try_to::<GString>().ok())
+                    .map(|s| s.to_string());
+
+                match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &api_key.to_string(), thumb_path.as_deref()).await {
                     Ok(mod_info) => {
-                        // Imprimir información sobre el mod subido
+                        // Print information about the uploaded mod
                         godot_print!("Mod uploaded successfully: {}", mod_info.name);
-                        // Devolver el mod subido
+                        // Return the uploaded mod
                         mod_info.to_godot()
                     }
                     Err(err) => {
-                        // Imprimir mensaje de error y devolver un diccionario vacío
+                        // Print error message and return an empty dictionary
                         godot_print!("Error uploading mod: {:?}", err);
                         empty_dict
                     }
                 }
             };
 
-            // Crear una nueva runtime de tokio y ejecutar la tarea
+            // Create a new tokio runtime and execute the task
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
