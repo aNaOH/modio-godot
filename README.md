@@ -31,6 +31,8 @@ get_mods() returns an array of dictioraries, the dictionary is formed by:
 - id
 - name (Thanks to @d10sfan for adding it!)
 - submitter (Thanks to @d10sfan for adding it!)
+- summary
+- description
 - date_updated
 - date_live
 - profile_url
