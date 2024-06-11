@@ -22,6 +22,8 @@ use tokio::fs::read;
 
 use image::GenericImageView;
 
+use serde::Deserialize;
+
 struct ModIOAddon;
 
 #[gdextension]
@@ -136,6 +138,12 @@ impl ModIOMod {
     }
 }
 
+#[derive(Deserialize)]
+struct AuthResponse {
+    access_token: String,
+    expires_in: u64,
+}
+
 struct ModIOClient {
     client: Modio,
     id: u64
@@ -176,7 +184,7 @@ impl ModIOClient {
         Ok(())
     }
 
-    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: Option<&str>) -> Result<ModIOMod, Box<dyn std::error::Error>> {
+    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: &str) -> Result<ModIOMod, Box<dyn std::error::Error>> {
         let zip_path = format!("{}.zip", modfile_path);
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
@@ -188,9 +196,8 @@ impl ModIOClient {
             .text("summary", summary.to_string())
             .part("modfile", multipart::Part::bytes(modfile).file_name("mod.zip"));
 
-        if let Some(thumb_path) = thumbnail_path {
-            let thumbnail = read(thumb_path).await?;
-            let img = image::open(thumb_path)?;
+            let thumbnail = read(thumbnail_path).await?;
+            let img = image::open(thumbnail_path)?;
 
             if img.width() * 9 != img.height() * 16 || img.width() < 512 || img.height() < 288 {
                 return Err("Thumbnail must be 16:9 and at least 512x288".into());
@@ -201,7 +208,6 @@ impl ModIOClient {
             }
 
             form = form.part("logo", multipart::Part::bytes(thumbnail).file_name("thumbnail.png"));
-        }
 
         let response = client.post(format!("https://api.mod.io/v1/games/{}/mods", self.id))
             .header("Authorization", format!("Bearer {}", api_key))
@@ -213,6 +219,44 @@ impl ModIOClient {
 
         let mod_info = ModIOMod::from_mod(&response);
         Ok(mod_info)
+    }
+
+    pub async fn login_with_email(&self, email: &str, password: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let client = Client::new();
+        let response = client.post("https://api.mod.io/v1/oauth/email")
+            .form(&[
+                ("email", email),
+                ("password", password),
+                ("grant_type", "password"),
+            ])
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let auth: AuthResponse = response.json().await?;
+            Ok(auth.access_token)
+        } else {
+            Err("Failed to login with email and password".into())
+        }
+    }
+
+    pub async fn login_with_steam(&self, app_id: &str, ticket: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let client = Client::new();
+        let response = client.post("https://api.mod.io/v1/oauth/steam")
+            .form(&[
+                ("appdata", app_id),
+                ("ticket", ticket),
+                ("grant_type", "steam"),
+            ])
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let auth: AuthResponse = response.json().await?;
+            Ok(auth.access_token)
+        } else {
+            Err("Failed to login with Steam".into())
+        }
     }
 }
 
@@ -316,18 +360,13 @@ impl ModIO {
     }
 
     #[func]
-    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: Dictionary) -> Dictionary {
+    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> Dictionary {
         let empty_dict = Dictionary::new();
         if let Some(ref client) = self.client {
             // Create a new task and execute it
             let result = async {
-                // Extract the thumbnail path from the dictionary
-                let thumb_path: Option<String> = thumbnail_path
-                    .get("path")
-                    .and_then(|v| v.try_to::<GString>().ok())
-                    .map(|s| s.to_string());
 
-                match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &api_key.to_string(), thumb_path.as_deref()).await {
+                match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &api_key.to_string(), &thumbnail_path.to_string()).await {
                     Ok(mod_info) => {
                         // Print information about the uploaded mod
                         godot_print!("Mod uploaded successfully: {}", mod_info.name);
@@ -347,6 +386,56 @@ impl ModIO {
                 .enable_all()
                 .build()
                 .unwrap();
+            rt.block_on(result)
+        } else {
+            empty_dict
+        }
+    }
+
+    #[func]
+    fn login_with_email(&self, email: GString, password: GString) -> Dictionary {
+        let empty_dict = Dictionary::new();
+        if let Some(ref client) = self.client {
+            let result = async {
+                match client.login_with_email(&email.to_string(), &password.to_string()).await {
+                    Ok(api_key) => {
+                        let mut dict = Dictionary::new();
+                        dict.insert("api_key", api_key);
+                        dict
+                    }
+                    Err(err) => {
+                        godot_print!("Error logging in with email: {:?}", err);
+                        empty_dict
+                    }
+                }
+            };
+
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(result)
+        } else {
+            empty_dict
+        }
+    }
+
+    #[func]
+    fn login_with_steam(&self, app_id: u64, ticket: GString) -> Dictionary {
+        let empty_dict = Dictionary::new();
+        if let Some(ref client) = self.client {
+            let result = async {
+                match client.login_with_steam(&app_id.to_string(), &ticket.to_string()).await {
+                    Ok(api_key) => {
+                        let mut dict = Dictionary::new();
+                        dict.insert("api_key", api_key);
+                        dict
+                    }
+                    Err(err) => {
+                        godot_print!("Error logging in with Steam: {:?}", err);
+                        empty_dict
+                    }
+                }
+            };
+
+            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(result)
         } else {
             empty_dict
