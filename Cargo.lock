@@ -737,8 +737,6 @@ dependencies = [
  "image",
  "modio",
  "reqwest",
- "serde",
- "serde_json",
  "tokio",
  "zip",
 ]

@@ -49,12 +49,8 @@ Returns the mod dictionary.
 
 ## Auth
 
-These functions returns a Dictionary with an api key located in dictionary["api_key"]
+These functions returns a String with an api key on success or an empty String otherwise
 
-### login_with_email(email: String, password: String)
+### login_with_steam(ticket: String)
 
-Uses email and password to login to mod.io
-
-### login_with_steam(app_id: int, ticket: String)
-
-Uses the Steam AppID and user auth ticket to login to mod.io
+Uses the Steam user auth ticket to login to mod.io

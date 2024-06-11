@@ -22,8 +22,6 @@ use tokio::fs::read;
 
 use image::GenericImageView;
 
-use serde::Deserialize;
-
 struct ModIOAddon;
 
 #[gdextension]
@@ -33,6 +31,8 @@ pub struct ModIOMod {
     pub id: u64,
     pub name: GString,
     pub submitter: GString,
+    pub summary: GString,
+    pub description: GString,
     pub date_updated: i64,
     pub date_live: i64,
     pub thumb_url: GString,
@@ -55,6 +55,8 @@ impl ToGodot for ModIOMod {
         dictionary.insert("id", self.id);
         dictionary.insert("name", self.name.clone());
         dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("summary", self.summary.clone());
+        dictionary.insert("description", self.description.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("thumb_url", self.thumb_url.clone());
@@ -73,6 +75,8 @@ impl ToGodot for ModIOMod {
         dictionary.insert("id", self.id);
         dictionary.insert("name", self.name.clone());
         dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("summary", self.summary.clone());
+        dictionary.insert("description", self.description.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("thumb_url", self.thumb_url.clone());
@@ -90,6 +94,8 @@ impl ToGodot for ModIOMod {
         dictionary.insert("id", self.id);
         dictionary.insert("name", self.name.clone());
         dictionary.insert("submitter", self.submitter.clone());
+        dictionary.insert("summary", self.summary.clone());
+        dictionary.insert("description", self.description.clone());
         dictionary.insert("date_updated", self.date_updated);
         dictionary.insert("date_live", self.date_live);
         dictionary.insert("thumb_url", self.thumb_url.clone());
@@ -122,10 +128,14 @@ impl ModIOMod {
             .map(|tag| tag.name.as_str().into())
             .collect();
 
+
+
         Self {
             id: mod_info.id.get(),
             name: mod_info.name.as_str().into(),
             submitter: mod_info.submitted_by.username.as_str().into(),
+            summary: mod_info.summary.as_str().into(),
+            description: mod_info.description_plaintext.into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
             thumb_url: mod_info.logo.thumb_1280x720.as_str().into_godot(),
@@ -136,12 +146,6 @@ impl ModIOMod {
             tags,
         }
     }
-}
-
-#[derive(Deserialize)]
-struct AuthResponse {
-    access_token: String,
-    expires_in: u64,
 }
 
 struct ModIOClient {
@@ -221,39 +225,12 @@ impl ModIOClient {
         Ok(mod_info)
     }
 
-    pub async fn login_with_email(&self, email: &str, password: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let client = Client::new();
-        let response = client.post("https://api.mod.io/v1/oauth/email")
-            .form(&[
-                ("email", email),
-                ("password", password),
-                ("grant_type", "password"),
-            ])
-            .send()
-            .await?;
+    pub async fn login_with_steam(&self, ticket: &str) -> Result<String, Box<dyn std::error::Error>> {
 
-        if response.status().is_success() {
-            let auth: AuthResponse = response.json().await?;
-            Ok(auth.access_token)
-        } else {
-            Err("Failed to login with email and password".into())
-        }
-    }
+        let auth = self.client.auth().external(modio::auth::SteamOptions::new(ticket)).await?;
 
-    pub async fn login_with_steam(&self, app_id: &str, ticket: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let client = Client::new();
-        let response = client.post("https://api.mod.io/v1/oauth/steam")
-            .form(&[
-                ("appdata", app_id),
-                ("ticket", ticket),
-                ("grant_type", "steam"),
-            ])
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let auth: AuthResponse = response.json().await?;
-            Ok(auth.access_token)
+        if !auth.api_key.is_empty() {
+            Ok(auth.api_key)
         } else {
             Err("Failed to login with Steam".into())
         }
@@ -393,44 +370,16 @@ impl ModIO {
     }
 
     #[func]
-    fn login_with_email(&self, email: GString, password: GString) -> Dictionary {
-        let empty_dict = Dictionary::new();
+    fn login_with_steam(&self, ticket: GString) -> GString {
         if let Some(ref client) = self.client {
             let result = async {
-                match client.login_with_email(&email.to_string(), &password.to_string()).await {
+                match client.login_with_steam(&ticket.to_string()).await {
                     Ok(api_key) => {
-                        let mut dict = Dictionary::new();
-                        dict.insert("api_key", api_key);
-                        dict
-                    }
-                    Err(err) => {
-                        godot_print!("Error logging in with email: {:?}", err);
-                        empty_dict
-                    }
-                }
-            };
-
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(result)
-        } else {
-            empty_dict
-        }
-    }
-
-    #[func]
-    fn login_with_steam(&self, app_id: u64, ticket: GString) -> Dictionary {
-        let empty_dict = Dictionary::new();
-        if let Some(ref client) = self.client {
-            let result = async {
-                match client.login_with_steam(&app_id.to_string(), &ticket.to_string()).await {
-                    Ok(api_key) => {
-                        let mut dict = Dictionary::new();
-                        dict.insert("api_key", api_key);
-                        dict
+                        api_key.to_godot()
                     }
                     Err(err) => {
                         godot_print!("Error logging in with Steam: {:?}", err);
-                        empty_dict
+                        "".to_godot()
                     }
                 }
             };
@@ -438,7 +387,7 @@ impl ModIO {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(result)
         } else {
-            empty_dict
+            "".to_godot()
         }
     }
 }
