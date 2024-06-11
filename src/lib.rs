@@ -129,13 +129,15 @@ impl ModIOMod {
             .collect();
 
 
+        let desc = mod_info.description_plaintext.as_ref().unwrap_or(&"".to_string()).clone();
+
 
         Self {
             id: mod_info.id.get(),
             name: mod_info.name.as_str().into(),
             submitter: mod_info.submitted_by.username.as_str().into(),
             summary: mod_info.summary.as_str().into(),
-            description: mod_info.description_plaintext.into(),
+            description: desc.into(),
             date_updated: mod_info.date_updated as i64,
             date_live: mod_info.date_live as i64,
             thumb_url: mod_info.logo.thumb_1280x720.as_str().into_godot(),
