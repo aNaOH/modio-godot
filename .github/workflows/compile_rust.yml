@@ -28,27 +28,6 @@ jobs:
         name: windows-release-x64
         path: target/x86_64-pc-windows-msvc/release/mod_io.dll
 
-  build-windows-release-x86:
-    runs-on: windows-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Build Windows Release x86
-      run: cargo build --target i686-pc-windows-msvc --release
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: windows-release-x86
-        path: target/i686-pc-windows-msvc/release/mod_io.dll
-
   build-windows-debug-x64:
     runs-on: windows-latest
     steps:
@@ -64,32 +43,16 @@ jobs:
     - name: Build Windows Debug x64
       run: cargo build --target x86_64-pc-windows-msvc
 
+    - name: Rename Debug Artifact
+      run: |
+        mkdir -p target/x86_64-pc-windows-msvc/debug/renamed
+        mv target/x86_64-pc-windows-msvc/debug/mod_io.dll target/x86_64-pc-windows-msvc/debug/renamed/mod_io.debug.dll
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: windows-debug-x64
-        path: target/x86_64-pc-windows-msvc/debug/mod_io.dll
-
-  build-windows-debug-x86:
-    runs-on: windows-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-
-    - name: Build Windows Debug x86
-      run: cargo build --target i686-pc-windows-msvc
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: windows-debug-x86
-        path: target/i686-pc-windows-msvc/debug/mod_io.dll
+        path: target/x86_64-pc-windows-msvc/debug/renamed/mod_io.debug.dll
 
   build-macos-release-x64:
     runs-on: macos-latest
@@ -130,14 +93,19 @@ jobs:
     - name: Install toolchain
       run: rustup target add x86_64-apple-darwin
 
-    - name: Build macOS Release x64
+    - name: Build macOS Debug x64
       run: cargo build --target x86_64-apple-darwin
+
+    - name: Rename Debug Artifact
+      run: |
+        mkdir -p target/x86_64-apple-darwin/debug/renamed
+        mv target/x86_64-apple-darwin/debug/libmod_io.dylib target/x86_64-apple-darwin/debug/renamed/libmod_io.debug.dylib
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: macos-debug-x64
-        path: target/x86_64-apple-darwin/debug/libmod_io.dylib
+        path: target/x86_64-apple-darwin/debug/renamed/libmod_io.debug.dylib
 
   build-linux-release-x64:
     runs-on: ubuntu-latest
@@ -175,8 +143,37 @@ jobs:
     - name: Build Linux Debug
       run: cargo build --target x86_64-unknown-linux-gnu
 
+    - name: Rename Debug Artifact
+      run: |
+        mkdir -p target/x86_64-unknown-linux-gnu/debug/renamed
+        mv target/x86_64-unknown-linux-gnu/debug/libmod_io.so target/x86_64-unknown-linux-gnu/debug/renamed/libmod_io.debug.so
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: linux-debug
-        path: target/x86_64-unknown-linux-gnu/debug/libmod_io.so
+        path: target/x86_64-unknown-linux-gnu/debug/renamed/libmod_io.debug.so
+
+  compress-and-upload:
+    needs: 
+      - build-windows-release-x64
+      - build-windows-debug-x64
+      - build-macos-release-x64
+      - build-macos-debug-x64
+      - build-linux-release-x64
+      - build-linux-debug-x64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+
+    - name: Create zip file with all artifacts
+      run: zip -r artifacts.zip artifacts
+
+    - name: Upload Combined Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: combined-artifacts
+        path: artifacts.zip
