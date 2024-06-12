@@ -47,7 +47,7 @@ get_mods() needs a string argument for the search query, if you want to list all
 
 Needs an API key obtained using one of the auth functions
 Compresses the file at modfile_path onto a zip file and uploads it to mod.io with the specified name and summary, also uploads the thumbnail at thumbnail_path (This image has to have an aspect ratio of 16:9, a min resolution of 512x288 and max size of 8MB)
-Returns the mod dictionary.
+Returns a boolean confirming the mod upload.
 
 ## Auth
 

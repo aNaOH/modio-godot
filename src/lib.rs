@@ -190,7 +190,7 @@ impl ModIOClient {
         Ok(())
     }
 
-    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: &str) -> Result<ModIOMod, Box<dyn std::error::Error>> {
+    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
         let zip_path = modfile_path.to_owned() + ".zip";
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
@@ -202,29 +202,29 @@ impl ModIOClient {
             .text("summary", summary.to_string())
             .part("modfile", multipart::Part::bytes(modfile).file_name("mod.zip"));
 
-            let thumbnail = read(thumbnail_path).await?;
-            let img = image::open(thumbnail_path)?;
+        let thumbnail = read(thumbnail_path).await?;
+        let img = image::open(thumbnail_path)?;
 
-            if img.width() * 9 != img.height() * 16 || img.width() < 512 || img.height() < 288 {
-                return Err("Thumbnail must be 16:9 and at least 512x288".into());
-            }
+        if img.width() * 9 != img.height() * 16 || img.width() < 512 || img.height() < 288 {
+            return Err("Thumbnail must be 16:9 and at least 512x288".into());
+        }
 
-            if thumbnail.len() > 8 * 1024 * 1024 {
-                return Err("Thumbnail must be less than 8MB".into());
-            }
+        if thumbnail.len() > 8 * 1024 * 1024 {
+            return Err("Thumbnail must be less than 8MB".into());
+        }
 
-            form = form.part("logo", multipart::Part::bytes(thumbnail).file_name("thumbnail.png"));
+        form = form.part("logo", multipart::Part::bytes(thumbnail).file_name("thumbnail.png"));
 
         let response = client.post(format!("https://api.mod.io/v1/games/{}/mods", self.id))
             .header("Authorization", format!("Bearer {}", api_key))
             .multipart(form)
             .send()
-            .await?
-            .json::<Mod>()
             .await?;
 
-        let mod_info = ModIOMod::from_mod(&response);
-        Ok(mod_info)
+        let response_text = response.text().await?;
+        println!("{}", response_text);
+
+        Ok(true)
     }
 
     pub async fn login_with_steam(&self, ticket: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -339,8 +339,7 @@ impl ModIO {
     }
 
     #[func]
-    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> Dictionary {
-        let empty_dict = Dictionary::new();
+    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> bool {
         if let Some(ref client) = self.client {
             // Create a new task and execute it
             let result = async {
@@ -348,14 +347,14 @@ impl ModIO {
                 match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &api_key.to_string(), &thumbnail_path.to_string()).await {
                     Ok(mod_info) => {
                         // Print information about the uploaded mod
-                        godot_print!("Mod uploaded successfully: {}", mod_info.name);
+                        godot_print!("Mod uploaded successfully");
                         // Return the uploaded mod
                         mod_info.to_godot()
                     }
                     Err(err) => {
                         // Print error message and return an empty dictionary
                         godot_print!("Error uploading mod: {:?}", err);
-                        empty_dict
+                        false
                     }
                 }
             };
@@ -367,7 +366,7 @@ impl ModIO {
                 .unwrap();
             rt.block_on(result)
         } else {
-            empty_dict
+            false
         }
     }
 
