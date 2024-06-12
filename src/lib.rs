@@ -2,6 +2,7 @@ use godot::prelude::*;
 use godot::engine::Node;
 use godot::builtin::meta::GodotConvert;
 
+use modio::auth::Token;
 use modio::files::AddFileOptions;
 use modio::mods::filters::Tags;
 use modio::types::id::GameId;
@@ -192,7 +193,7 @@ impl ModIOClient {
         Ok(())
     }
 
-    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, user_token: &str, thumbnail_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
         let zip_path = modfile_path.to_owned() + ".zip";
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
@@ -208,7 +209,7 @@ impl ModIOClient {
             return Err("Thumbnail must be less than 8MB".into());
         }
 
-        let user_client = self.client.with_credentials(Credentials::with_token(self.game_api.as_str(), api_key));
+        let user_client = self.client.with_credentials(Credentials::with_token(self.game_api.as_str(), user_token));
 
         let new_mod = user_client.game(GameId::new(self.id)).mods().add(AddModOptions::new(name, thumbnail_path, summary)).await?;
 
@@ -221,8 +222,9 @@ impl ModIOClient {
 
         let auth = self.client.auth().external(modio::auth::SteamOptions::new(ticket)).await?;
 
-        if !auth.api_key.is_empty() {
-            Ok(auth.api_key)
+        if auth.token.is_some() {
+            let token = auth.token.ok_or("Token not found")?;
+            Ok(token.value)
         } else {
             Err("Failed to login with Steam".into())
         }
@@ -329,12 +331,12 @@ impl ModIO {
     }
 
     #[func]
-    fn upload_mod(&self, api_key: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> bool {
+    fn upload_mod(&self, user_token: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> bool {
         if let Some(ref client) = self.client {
             // Create a new task and execute it
             let result = async {
 
-                match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &api_key.to_string(), &thumbnail_path.to_string()).await {
+                match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &user_token.to_string(), &thumbnail_path.to_string()).await {
                     Ok(mod_info) => {
                         // Print information about the uploaded mod
                         godot_print!("Mod uploaded successfully");
