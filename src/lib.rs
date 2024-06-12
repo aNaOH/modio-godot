@@ -2,11 +2,12 @@ use godot::prelude::*;
 use godot::engine::Node;
 use godot::builtin::meta::GodotConvert;
 
+use modio::files::AddFileOptions;
 use modio::mods::filters::Tags;
 use modio::types::id::GameId;
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
-use modio::mods::Mod;
+use modio::mods::{AddModOptions, Mod};
 
 use std::fs::File;
 use std::io::BufWriter;
@@ -194,13 +195,6 @@ impl ModIOClient {
         let zip_path = modfile_path.to_owned() + ".zip";
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
-        let modfile = read(&zip_path).await?;
-        let client = Client::new();
-
-        let mut form = multipart::Form::new()
-            .text("name", name.to_string())
-            .text("summary", summary.to_string())
-            .part("modfile", multipart::Part::bytes(modfile).file_name("mod.zip"));
 
         let thumbnail = read(thumbnail_path).await?;
         let img = image::open(thumbnail_path)?;
@@ -213,16 +207,9 @@ impl ModIOClient {
             return Err("Thumbnail must be less than 8MB".into());
         }
 
-        form = form.part("logo", multipart::Part::bytes(thumbnail).file_name("thumbnail.png"));
+        let new_mod = self.client.with_credentials(Credentials::new(api_key)).game(GameId::new(self.id)).mods().add(AddModOptions::new(name, thumbnail_path, summary)).await?;
 
-        let response = client.post(format!("https://api.mod.io/v1/games/{}/mods", self.id))
-            .header("Authorization", format!("Bearer {}", api_key))
-            .multipart(form)
-            .send()
-            .await?;
-
-        let response_text = response.text().await?;
-        println!("{}", response_text);
+        self.client.with_credentials(Credentials::new(api_key)).game(GameId::new(self.id)).mod_(new_mod.id).files().add(AddFileOptions::with_file(zip_path)).await?;
 
         Ok(true)
     }
