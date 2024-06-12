@@ -191,7 +191,7 @@ impl ModIOClient {
     }
 
     async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, api_key: &str, thumbnail_path: &str) -> Result<ModIOMod, Box<dyn std::error::Error>> {
-        let zip_path = format!("{}.zip", modfile_path);
+        let zip_path = modfile_path + ".zip";
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
         let modfile = read(&zip_path).await?;
