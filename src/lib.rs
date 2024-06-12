@@ -2,10 +2,9 @@ use godot::prelude::*;
 use godot::engine::Node;
 use godot::builtin::meta::GodotConvert;
 
-use modio::auth::Token;
 use modio::files::AddFileOptions;
 use modio::mods::filters::Tags;
-use modio::types::id::GameId;
+use modio::types::id::{GameId, Id};
 use modio::{Credentials, Modio};
 use modio::filter::prelude::*;
 use modio::mods::{AddModOptions, Mod};
@@ -16,9 +15,6 @@ use std::path::Path;
 
 use zip::write::FileOptions;
 use zip::ZipWriter;
-
-use reqwest::Client;
-use reqwest::multipart;
 
 use tokio::fs::read;
 
@@ -193,7 +189,7 @@ impl ModIOClient {
         Ok(())
     }
 
-    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, user_token: &str, thumbnail_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    async fn upload_mod_via_api(&self, modfile_path: &str, name: &str, summary: &str, user_token: &str, thumbnail_path: &str) -> Result<String, Box<dyn std::error::Error>> {
         let zip_path = modfile_path.to_owned() + ".zip";
         Self::compress_to_zip(modfile_path, &zip_path).await?;
 
@@ -215,7 +211,7 @@ impl ModIOClient {
 
         user_client.game(GameId::new(self.id)).mod_(new_mod.id).files().add(AddFileOptions::with_file(zip_path)).await?;
 
-        Ok(true)
+        Ok(new_mod.id.to_string())
     }
 
     pub async fn login_with_steam(&self, ticket: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -228,6 +224,21 @@ impl ModIOClient {
         } else {
             Err("Failed to login with Steam".into())
         }
+    }
+
+    async fn update_mod(&self, mod_id: u64, modfile_path: &str, user_token: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let user_client = self.client.with_credentials(Credentials::with_token(self.game_api.as_str(), user_token));
+
+        let mod_ref = user_client.game(GameId::new(self.id)).mod_(Id::new(mod_id));
+
+        let version = mod_ref.files().search(Filter::default()).collect().await?.len();
+        
+        let zip_path = modfile_path.to_owned() + version.to_string().as_str() + ".zip";
+        Self::compress_to_zip(modfile_path, &zip_path).await?;
+
+        mod_ref.files().add(AddFileOptions::with_file(zip_path)).await?;
+
+        Ok(true)
     }
 }
 
@@ -331,12 +342,44 @@ impl ModIO {
     }
 
     #[func]
-    fn upload_mod(&self, user_token: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> bool {
+    fn upload_mod(&self, user_token: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> GString {
         if let Some(ref client) = self.client {
             // Create a new task and execute it
             let result = async {
 
                 match client.upload_mod_via_api(&modfile_path.to_string(), &name.to_string(), &summary.to_string(), &user_token.to_string(), &thumbnail_path.to_string()).await {
+                    Ok(mod_info) => {
+                        // Print information about the uploaded mod
+                        godot_print!("Mod uploaded successfully");
+                        // Return the uploaded mod
+                        mod_info.to_godot()
+                    }
+                    Err(err) => {
+                        // Print error message and return an empty dictionary
+                        godot_print!("Error uploading mod: {:?}", err);
+                        "".to_godot()
+                    }
+                }
+            };
+
+            // Create a new tokio runtime and execute the task
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(result)
+        } else {
+            "".to_godot()
+        }
+    }
+
+    #[func]
+    fn update_mod(&self, mod_id: u64, modfile_path: GString, user_token: GString) -> bool {
+        if let Some(ref client) = self.client {
+            // Create a new task and execute it
+            let result = async {
+
+                match client.update_mod(mod_id, &modfile_path.to_string(), &user_token.to_string()).await {
                     Ok(mod_info) => {
                         // Print information about the uploaded mod
                         godot_print!("Mod uploaded successfully");
