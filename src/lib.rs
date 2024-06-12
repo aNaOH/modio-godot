@@ -153,13 +153,14 @@ impl ModIOMod {
 
 struct ModIOClient {
     client: Modio,
-    id: u64
+    id: u64,
+    game_api : String
 }
 
 impl ModIOClient {
     fn new(api: &String, game: u64) -> Option<Self> {
         match Modio::new(Credentials::new(api)) {
-            Ok(modio_instance) => Some(Self { client: modio_instance, id: game }),
+            Ok(modio_instance) => Some(Self { client: modio_instance, id: game, game_api: api.to_string() }),
             Err(_) => None,
         }
     }
@@ -207,9 +208,11 @@ impl ModIOClient {
             return Err("Thumbnail must be less than 8MB".into());
         }
 
-        let new_mod = self.client.with_credentials(Credentials::new(api_key)).game(GameId::new(self.id)).mods().add(AddModOptions::new(name, thumbnail_path, summary)).await?;
+        let user_client = self.client.with_credentials(Credentials::with_token(self.game_api.as_str(), api_key));
 
-        self.client.with_credentials(Credentials::new(api_key)).game(GameId::new(self.id)).mod_(new_mod.id).files().add(AddFileOptions::with_file(zip_path)).await?;
+        let new_mod = user_client.game(GameId::new(self.id)).mods().add(AddModOptions::new(name, thumbnail_path, summary)).await?;
+
+        user_client.game(GameId::new(self.id)).mod_(new_mod.id).files().add(AddFileOptions::with_file(zip_path)).await?;
 
         Ok(true)
     }
