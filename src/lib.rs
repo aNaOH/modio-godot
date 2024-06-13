@@ -162,6 +162,32 @@ impl ModIOClient {
         }
     }
 
+    async fn search_mods(&self, query: &str, tags: &Vec<&str>, page: usize, per_page: usize) -> Result<Vec<Mod>, Box<dyn std::error::Error>> {
+        if page < 1 {
+            return Err("Page must start on 1".into());
+        }
+
+        // Crear el filtro básico con paginación
+        let mut f = Filter::default().and(with_limit(per_page).offset(per_page * (page - 1)));
+
+        // Agregar búsqueda por texto si el query no está vacío
+        if !query.is_empty() {
+            f = f.and(Fulltext::eq(query));
+        }
+
+        // Agregar búsqueda por etiquetas si hay etiquetas especificadas
+        if !tags.is_empty() {
+            for tag in tags {
+                f = f.and(Tags::eq(*tag));
+            }
+        }
+
+        // Realizar la búsqueda con el filtro aplicado
+        let mods = self.client.game(GameId::new(self.id)).mods().search(f).collect().await?;
+
+        Ok(mods)
+    }
+
     async fn compress_to_zip(file_path: &str, zip_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let path = Path::new(file_path);
         let zip_file = File::create(zip_path)?;
@@ -271,75 +297,46 @@ impl ModIO {
         self.client.is_some()
     }
 
-    async fn get_mods_async_inner(&self, query: GString, tags: GString, per_page: usize, page: usize) -> Option<Array<Dictionary>> {
+    // Función #[func] que invoca la función asíncrona intermedia
+    #[func]
+    fn get_mods(&self, query: GString, page: u16, per_page: u16, tags: PackedStringArray) -> Array<Dictionary> {
         if let Some(ref client) = self.client {
-            // Example: Get mods (replace with your actual parameters)
-            let mut f = Filter::default().and(with_limit(per_page).offset(per_page*page));
+            // Crear una nueva tarea y ejecutarla
+            let result = async {
+                // Convertir PackedStringArray a Vec<String>
+                let tags_array: Vec<String> = tags.to_vec().into_iter().map(|tag| tag.to_string()).collect();
 
-            if query != "".into() {
-                f = Fulltext::eq(query).and(Tags::_in(tags));
-            }
+                // Convertir Vec<String> a Vec<&str>
+                let tags_str_array: Vec<&str> = tags_array.iter().map(|s| s.as_str()).collect();
 
-            match client
-                .client
-                .game(GameId::new(client.id))
-                .mods()
-                .search(f)
-                .collect()
-                .await
-            {
-                Ok(mods) => {
-                    let mut mod_vec = Array::new();
-                    for m in mods {
+                match client.search_mods(query.to_string().as_str(), &tags_str_array, page.into(), per_page.into()).await {
+                    Ok(mod_list) => {
+                        let mut array = Array::new();
+                        
+                        for mod_info in mod_list {
+                            array.push(ModIOMod::from_mod(&mod_info).to_godot());
+                        }
 
-                        mod_vec.insert(mod_vec.len(), ModIOMod::from_mod(&m).to_godot())
+                        array
                     }
-
-                    Some(mod_vec)
-                },
-                Err(err) => {
-                    // Imprimir el error y devolver None
-                    godot_print!("Error getting mods: {:?}", err);
-                    None
+                    Err(err) => {
+                        godot_error!("Error searching mods! {:?}", err);
+                        Array::new()
+                    }
                 }
-            }
+            };
+
+            // Crear un nuevo tokio runtime y ejecutar la tarea
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(result)
         } else {
-            None
+            Array::new()
         }
     }
 
-    
-    // Función #[func] que invoca la función asíncrona intermedia
-    #[func]
-    fn get_mods(&self, query: GString, page: u16, per_page: u16) -> Array<Dictionary> {
-
-        // Crear una nueva tarea y ejecutarla
-        let result = async {
-            match self.get_mods_async_inner(query, "".into(), per_page.into(), page.into()).await {
-                Some(mods) => {
-                    // Imprimir información sobre los mods
-                    godot_print!("Mods found");
-                    // Devolver los mods
-                    mods
-                }
-                None => {
-                    // Imprimir mensaje de error y devolver un vector vacío
-                    godot_print!("Error getting mods or Mod.io Client not connected");
-                    Array::new()
-                }
-            }
-        };
-    
-        // Crear una nueva runtime de tokio y ejecutar la tarea
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        let mods = rt.block_on(result);
-    
-        // Devolver el resultado de la tarea
-        mods
-    }
 
     #[func]
     fn upload_mod(&self, user_token: GString, modfile_path: GString, name: GString, summary: GString, thumbnail_path: GString) -> GString {
